@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SYOS — Dashboard</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body class="bg-gray-50 min-h-screen">
+    <div id="staff-nav"></div>
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+      <!-- Page header -->
+      <div class="mb-8">
+        <h2 class="text-xl font-bold text-black">Dashboard</h2>
+        <p class="text-sm text-gray-400 mt-0.5" id="today-date"></p>
+      </div>
+
+      <!-- Metric cards -->
+      <div class="grid grid-cols-4 gap-4 mb-8">
+        <div class="bg-white border border-gray-100 rounded-xl p-5">
+          <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">
+            Today's Revenue
+          </p>
+          <p class="text-2xl font-bold text-black" id="metric-revenue">—</p>
+        </div>
+        <div class="bg-white border border-gray-100 rounded-xl p-5">
+          <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Items Sold Today</p>
+          <p class="text-2xl font-bold text-black" id="metric-bills">—</p>
+        </div>
+        <div class="bg-white border border-gray-100 rounded-xl p-5">
+          <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">
+            Low Stock Items
+          </p>
+          <p class="text-2xl font-bold text-red-500" id="metric-lowstock">—</p>
+        </div>
+        <div class="bg-white border border-gray-100 rounded-xl p-5">
+          <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">
+            Total Items
+          </p>
+          <p class="text-2xl font-bold text-black" id="metric-items">—</p>
+        </div>
+      </div>
+
+      <!-- Two column layout -->
+      <div class="grid grid-cols-2 gap-6 mb-6">
+        <!-- Recent transactions -->
+        <div class="bg-white border border-gray-100 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-black">
+              Recent transactions
+            </h3>
+            <a
+              href="reports.html?tab=bills"
+              class="text-xs text-gray-400 hover:text-black transition-colors"
+              >View all →</a
+            >
+          </div>
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-gray-100">
+                <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                  Bill
+                </th>
+                <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                  Cashier
+                </th>
+                <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                  Total
+                </th>
+                <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                  Type
+                </th>
+              </tr>
+            </thead>
+            <tbody id="recent-bills"></tbody>
+          </table>
+        </div>
+
+        <!-- Reorder alerts -->
+        <div class="bg-white border border-gray-100 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-black">Reorder alerts</h3>
+            <a
+              href="reports.html?tab=reorder"
+              class="text-xs text-gray-400 hover:text-black transition-colors"
+              >View all →</a
+            >
+          </div>
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-gray-100">
+                <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                  Item
+                </th>
+                <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                  Stock
+                </th>
+                <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                  Threshold
+                </th>
+              </tr>
+            </thead>
+            <tbody id="reorder-list"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="bg-white border border-gray-100 rounded-xl p-5">
+        <h3 class="text-sm font-semibold text-black mb-4">Quick actions</h3>
+        <div class="grid grid-cols-4 gap-3">
+          <a
+            href="pos.html"
+            class="flex flex-col items-center justify-center p-4 border border-gray-100 rounded-xl hover:border-black hover:bg-gray-50 transition-all group"
+          >
+            <span class="text-2xl mb-2">🖥</span>
+            <span
+              class="text-xs font-medium text-gray-700 group-hover:text-black"
+              >POS Terminal</span
+            >
+          </a>
+          <a
+            href="warehouse.html"
+            class="flex flex-col items-center justify-center p-4 border border-gray-100 rounded-xl hover:border-black hover:bg-gray-50 transition-all group"
+          >
+            <span class="text-2xl mb-2">📦</span>
+            <span
+              class="text-xs font-medium text-gray-700 group-hover:text-black"
+              >Warehouse</span
+            >
+          </a>
+          <a
+            href="reports.html"
+            class="flex flex-col items-center justify-center p-4 border border-gray-100 rounded-xl hover:border-black hover:bg-gray-50 transition-all group"
+          >
+            <span class="text-2xl mb-2">📊</span>
+            <span
+              class="text-xs font-medium text-gray-700 group-hover:text-black"
+              >Reports</span
+            >
+          </a>
+          <a
+            href="index.html"
+            class="flex flex-col items-center justify-center p-4 border border-gray-100 rounded-xl hover:border-black hover:bg-gray-50 transition-all group"
+          >
+            <span class="text-2xl mb-2">🛒</span>
+            <span
+              class="text-xs font-medium text-gray-700 group-hover:text-black"
+              >Customer Store</span
+            >
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/ui.js"></script>
+    <script src="/js/navbar.js"></script>
+    <script>
+      // Auth guard — managers only
+      const staff = Auth.requireStaff("MANAGER");
+
+      // Set date
+      document.getElementById("today-date").textContent =
+        new Date().toLocaleDateString("en-GB", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+
+      // Render nav
+      renderStaffNav("dashboard.html");
+
+      async function loadDashboard() {
+        try {
+          // Load in parallel
+          const [sales, reorder, inventory, bills] = await Promise.all([
+            API.reports.sales(null),
+            API.reports.reorder(),
+            API.items.getAll(),
+            API.reports.bills(null),
+          ]);
+
+          // Metrics
+          document.getElementById("metric-revenue").textContent = UI.currency(
+            sales.grandTotal,
+          );
+          document.getElementById("metric-bills").textContent =
+            bills.length;
+          document.getElementById("metric-lowstock").textContent =
+            reorder.count;
+          document.getElementById("metric-items").textContent =
+            inventory.length;
+
+          // Recent bills — last 5
+          bills.sort(function (a, b) {
+            return b.serialNumber - a.serialNumber;
+          });
+          const recentBills = bills.slice(0, 5);
+
+          UI.renderTable(
+            "recent-bills",
+            recentBills.map(
+              (b) => `
+                    <tr class="border-b border-gray-50 last:border-0">
+                        <td class="py-2.5 text-sm text-black">#${b.serialNumber}</td>
+                        <td class="py-2.5 text-sm text-gray-500">${b.cashierUsername}</td>
+                        <td class="py-2.5 text-sm text-black font-medium">${UI.currency(b.netTotal)}</td>
+                        <td class="py-2.5">${UI.badge(b.transactionType, b.transactionType === "WEB" ? "blue" : "gray")}</td>
+                    </tr>
+                `,
+            ),
+          );
+
+          // Reorder alerts — top 5
+          const top5 = reorder.items.slice(0, 5);
+          UI.renderTable(
+            "reorder-list",
+            top5.map(
+              (item) => `
+                    <tr class="border-b border-gray-50 last:border-0">
+                        <td class="py-2.5 text-sm text-black">${item.itemName}</td>
+                        <td class="py-2.5">${UI.badge(item.currentStock, "red")}</td>
+                        <td class="py-2.5 text-sm text-gray-400">${item.reorderLevel}</td>
+                    </tr>
+                `,
+            ),
+          );
+        } catch (e) {
+          console.error("Dashboard load error:", e);
+        }
+      }
+
+      loadDashboard();
+
+      setTimeout(() => WS.onUpdate(() => loadDashboard()), 500);
+    </script>
+  </body>
+</html>
+

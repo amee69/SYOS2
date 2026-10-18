@@ -1,0 +1,19 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tailwindcss -i ./src/input.css -o ../src/main/webapp/css/styles.css && cp src/*.html ../src/main/webapp/ && mkdir -p ../src/main/webapp/js && cp src/js/*.js ../src/main/webapp/js/",
+    "watch": "tailwindcss -i ./src/input.css -o ../src/main/webapp/css/styles.css --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.2.3",
+    "tailwindcss": "^4.2.3"
+  }
+}

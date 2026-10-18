@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYOS — POS Terminal</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+
+    <div id="staff-nav"></div>
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+
+        <div class="mb-6 flex items-center justify-between">
+            <div>
+                <h2 class="text-xl font-bold text-black">POS Terminal</h2>
+                <p class="text-sm text-gray-400 mt-0.5">Point of Sale — In-store transactions</p>
+            </div>
+            <button onclick="clearTransaction()"
+                class="text-xs text-gray-400 hover:text-red-500 transition-colors border border-gray-200 px-3 py-1.5 rounded-lg">
+                Clear transaction
+            </button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-6">
+
+            <!-- Left: Item entry + cart -->
+            <div class="col-span-2 space-y-4">
+
+                <!-- Item entry -->
+                <div class="bg-white border border-gray-100 rounded-xl p-5">
+                    <h3 class="text-sm font-semibold text-black mb-4">Add item</h3>
+                    <div class="flex gap-3">
+                        <div class="flex-1">
+                            <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1.5">Item code</label>
+                            <input type="text" id="item-code" placeholder="e.g. DRY-001-2026"
+                                onkeydown="if(event.key==='Enter') addItem()"
+                                class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors uppercase">
+                        </div>
+                        <div class="w-28">
+                            <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1.5">Quantity</label>
+                            <input type="number" id="item-qty" placeholder="1" min="1" value="1"
+                                onkeydown="if(event.key==='Enter') addItem()"
+                                class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors">
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="addItem()" id="btn-add"
+                                class="px-5 py-2.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-900 active:scale-95 transition-all">
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                    <div id="item-alert" class="hidden mt-3"></div>
+                </div>
+
+                <!-- Cart -->
+                <div class="bg-white border border-gray-100 rounded-xl p-5">
+                    <h3 class="text-sm font-semibold text-black mb-4">Cart</h3>
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-100">
+                                <th class="text-left text-xs text-gray-400 font-medium pb-2">Item</th>
+                                <th class="text-left text-xs text-gray-400 font-medium pb-2">Code</th>
+                                <th class="text-left text-xs text-gray-400 font-medium pb-2">Qty</th>
+                                <th class="text-left text-xs text-gray-400 font-medium pb-2">Unit price</th>
+                                <th class="text-left text-xs text-gray-400 font-medium pb-2">Total</th>
+                                <th class="pb-2"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-body"></tbody>
+                    </table>
+                    <div id="cart-empty" class="text-center py-10 text-gray-300 text-sm">
+                        No items added yet. Enter an item code above.
+                    </div>
+                </div>
+
+                <!-- Customer lookup -->
+                <div class="bg-white border border-gray-100 rounded-xl p-5">
+                    <h3 class="text-sm font-semibold text-black mb-4">Customer <span
+                            class="text-gray-400 font-normal">(optional)</span></h3>
+                    <div class="flex gap-3">
+                        <input type="email" id="customer-email" placeholder="Enter customer email"
+                            class="flex-1 px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors">
+                        <button onclick="lookupCustomer()"
+                            class="px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:border-black hover:text-black transition-all">
+                            Look up
+                        </button>
+                        <button onclick="clearCustomer()" id="btn-clear-customer"
+                            class="hidden px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-400 hover:text-red-500 transition-all">
+                            Clear
+                        </button>
+                    </div>
+
+                    <!-- Customer info -->
+                    <div id="customer-info" class="hidden mt-3 p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-black" id="customer-name"></p>
+                                <p class="text-xs text-gray-400 mt-0.5" id="customer-tier"></p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-gray-400">Loyalty points</p>
+                                <p class="text-sm font-bold text-black" id="customer-points"></p>
+                            </div>
+                        </div>
+                        <!-- Points redemption -->
+                        <div id="points-section" class="hidden mt-3 pt-3 border-t border-gray-200">
+                            <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1.5">
+                                Redeem points (1 point = LKR 1)
+                            </label>
+                            <div class="flex gap-2">
+                                <input type="number" id="points-redeem" placeholder="0" min="0"
+                                    oninput="updateSummary()"
+                                    class="w-32 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors">
+                                <span class="text-xs text-gray-400 self-center" id="max-points-label"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- right: Order summary + payment -->
+            <div class="space-y-4">
+
+                <!-- Summary -->
+                <div class="bg-white border border-gray-100 rounded-xl p-5">
+                    <h3 class="text-sm font-semibold text-black mb-4">Order summary</h3>
+
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Subtotal</span>
+                            <span class="text-black font-medium" id="summary-subtotal">LKR 0.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm" id="discount-row">
+                            <span class="text-gray-500">Discount</span>
+                            <span class="text-green-600 font-medium" id="summary-discount">— LKR 0.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm" id="points-row">
+                            <span class="text-gray-500">Points redeemed</span>
+                            <span class="text-green-600 font-medium" id="summary-points-val">— LKR 0.00</span>
+                        </div>
+                        <div class="border-t border-gray-100 pt-2 flex justify-between">
+                            <span class="text-sm font-semibold text-black">Total due</span>
+                            <span class="text-base font-bold text-black" id="summary-total">LKR 0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment -->
+                <div class="bg-white border border-gray-100 rounded-xl p-5">
+                    <h3 class="text-sm font-semibold text-black mb-4">Payment</h3>
+
+                    <div id="payment-alert" class="hidden mb-3"></div>
+
+                    <div class="mb-4">
+                        <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1.5">
+                            Cash tendered (LKR)
+                        </label>
+                        <input type="number" id="cash-tendered" placeholder="0.00" min="0" oninput="updateChange()"
+                            class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors">
+                    </div>
+
+                    <div class="mb-5 p-3 bg-gray-50 rounded-lg flex justify-between items-center">
+                        <span class="text-xs text-gray-500">Change due</span>
+                        <span class="text-sm font-bold text-black" id="change-due">LKR 0.00</span>
+                    </div>
+
+                    <button onclick="processCheckout()" id="btn-checkout"
+                        class="w-full bg-black text-white py-3 rounded-lg text-sm font-medium hover:bg-gray-900 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                        Process checkout
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div id="receipt-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-8 w-full max-w-sm mx-4">
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span class="text-green-600 text-xl">✓</span>
+                </div>
+                <h3 class="text-base font-bold text-black">Transaction complete</h3>
+                <p class="text-xs text-gray-400 mt-1" id="receipt-bill-num"></p>
+            </div>
+            <div id="receipt-body" class="space-y-2 mb-6 text-sm"></div>
+            <button onclick="closeReceipt()"
+                class="w-full bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-gray-900 transition-colors">
+                New transaction
+            </button>
+        </div>
+    </div>
+
+
+
+
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/ui.js"></script>
+    <script src="/js/navbar.js"></script>
+    <script>
+        const staff = Auth.requireStaff();
+        renderStaffNav('pos.html');
+
+        let cart = [];
+        let currentCustomer = null;
+
+        async function addItem() {
+            const code = document.getElementById('item-code').value.trim().toUpperCase();
+            const qty = parseInt(document.getElementById('item-qty').value) || 1;
+
+            if (!code) {
+                UI.showAlert('item-alert', 'Please enter an item code.');
+                return;
+            }
+            if (qty <= 0) {
+                UI.showAlert('item-alert', 'Quantity must be at least 1.');
+                return;
+            }
+
+            try {
+                const item = await API.items.getByCode(code);
+                const levels = await API.stock.getLevels(code);
+                const shelfStock = levels.shelf;
+
+                // How many of this item are already in cart?
+                const existing = cart.find(c => c.itemCode === item.itemCode);
+                const alreadyInCart = existing ? existing.quantity : 0;
+                const remaining = shelfStock - alreadyInCart;
+
+                if (remaining <= 0) {
+                    UI.showAlert('item-alert', `No shelf stock available for ${item.name}. Current shelf stock: ${shelfStock}, already in cart: ${alreadyInCart}`);
+                    return;
+                }
+
+                if (qty > remaining) {
+                    UI.showAlert('item-alert', `Only ${remaining} available on shelf for ${item.name}. (Shelf: ${shelfStock}, in cart: ${alreadyInCart})`);
+                    return;
+                }
+
+                // All good — add to cart
+                if (existing) {
+                    existing.quantity += qty;
+                } else {
+                    cart.push({
+                        itemCode: item.itemCode,
+                        name: item.name,
+                        unitPrice: parseFloat(item.unitPrice),
+                        quantity: qty
+                    });
+                }
+
+                UI.hideAlert('item-alert');
+                document.getElementById('item-code').value = '';
+                document.getElementById('item-qty').value = '1';
+                document.getElementById('item-code').focus();
+                renderCart();
+                updateSummary();
+            } catch (e) {
+                UI.showAlert('item-alert', `Item not found: ${code}`);
+                //UI.showAlert('item-alert', `System Error: ${e.message}`);
+            }
+        }
+
+        function renderCart() {
+            const tbody = document.getElementById('cart-body');
+            const empty = document.getElementById('cart-empty');
+
+            if (cart.length === 0) {
+                tbody.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            tbody.innerHTML = cart.map((item, i) => `
+                <tr class="border-b border-gray-50 last:border-0">
+                    <td class="py-2.5 text-sm text-black">${item.name}</td>
+                    <td class="py-2.5 text-xs text-gray-400">${item.itemCode}</td>
+                    <td class="py-2.5">
+                        <div class="flex items-center gap-1">
+                            <button onclick="changeQty(${i}, -1)"
+                                class="w-6 h-6 border border-gray-200 rounded text-xs hover:bg-gray-50 transition-colors">−</button>
+                            <span class="text-sm w-6 text-center">${item.quantity}</span>
+                            <button onclick="changeQty(${i}, 1)"
+                                class="w-6 h-6 border border-gray-200 rounded text-xs hover:bg-gray-50 transition-colors">+</button>
+                        </div>
+                    </td>
+                    <td class="py-2.5 text-sm text-gray-500">${UI.currency(item.unitPrice)}</td>
+                    <td class="py-2.5 text-sm font-medium text-black">${UI.currency(item.unitPrice * item.quantity)}</td>
+                    <td class="py-2.5">
+                        <button onclick="removeItem(${i})"
+                            class="text-xs text-gray-300 hover:text-red-500 transition-colors">Remove</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function changeQty(index, delta) {
+            if (delta > 0) {
+                // Check stock before increasing
+                const item = cart[index];
+                try {
+                    const levels = await API.stock.getLevels(item.itemCode);
+                    if (item.quantity >= levels.shelf) {
+                        UI.showAlert('item-alert', `Cannot add more — shelf stock is ${levels.shelf}`);
+                        return;
+                    }
+                } catch (e) {
+                    return;
+                }
+            }
+
+            cart[index].quantity += delta;
+            if (cart[index].quantity <= 0) cart.splice(index, 1);
+            UI.hideAlert('item-alert');
+            renderCart();
+            updateSummary();
+        }
+
+        function removeItem(index) {
+            cart.splice(index, 1);
+            renderCart();
+            updateSummary();
+        }
+
+        function updateSummary() {
+            let subtotal = 0;
+            for (let index = 0; index < cart.length; index++) {
+                let item = cart[index];
+                subtotal = subtotal + (item.unitPrice * item.quantity);
+            }
+            const pointsRedeem = parseInt(document.getElementById('points-redeem')?.value) || 0;
+
+            // calculate tier discount if customer exists
+            let tierDiscount = 0;
+            if (currentCustomer) {
+                const tierPercent = currentCustomer.tierDiscountPercent || 0;
+                tierDiscount = subtotal * tierPercent / 100;
+            }
+
+            const pointsDiscount = Math.min(pointsRedeem, subtotal - tierDiscount);
+            const totalDiscount = tierDiscount + pointsDiscount;
+            const total = Math.max(subtotal - totalDiscount, 0);
+
+            document.getElementById('summary-subtotal').textContent = UI.currency(subtotal);
+            document.getElementById('summary-discount').textContent = '— ' + UI.currency(tierDiscount);
+            document.getElementById('summary-points-val').textContent = '— ' + UI.currency(pointsDiscount);
+            document.getElementById('summary-total').textContent = UI.currency(total);
+
+            updateChange();
+        }
+
+        function updateChange() {
+            const total = parseFloat(document.getElementById('summary-total')
+                .textContent.replace('LKR ', '')) || 0;
+            const tendered = parseFloat(document.getElementById('cash-tendered').value) || 0;
+            const change = Math.max(tendered - total, 0);
+            document.getElementById('change-due').textContent = UI.currency(change);
+        }
+
+        async function lookupCustomer() {
+            const email = document.getElementById('customer-email').value.trim();
+            if (!email) return;
+
+            try {
+                const c = await API.customers.getByEmail(email);
+                currentCustomer = c;
+
+                document.getElementById('customer-name').textContent = c.fullName;
+                const tierPct = c.tierDiscountPercent || 0;
+                document.getElementById('customer-tier').textContent =
+                    c.customerTier + ' member' +
+                    (tierPct > 0 ? ' · ' + tierPct + '% discount' : '') +
+                    ' · ' + UI.currency(c.totalPurchases) + ' total purchases';
+                currentCustomer.tierDiscountPercent = tierPct;
+                document.getElementById('customer-points').textContent = c.loyaltyPoints + ' pts';
+                document.getElementById('customer-info').classList.remove('hidden');
+                document.getElementById('btn-clear-customer').classList.remove('hidden');
+
+                if (c.loyaltyPoints > 0) {
+                    document.getElementById('points-section').classList.remove('hidden');
+                    document.getElementById('max-points-label').textContent =
+                        'Max: ' + c.loyaltyPoints + ' pts';
+                }
+            } catch (e) {
+                UI.showAlert('item-alert', 'Customer not found.');
+            }
+        }
+
+        function clearCustomer() {
+            currentCustomer = null;
+            document.getElementById('customer-email').value = '';
+            document.getElementById('customer-info').classList.add('hidden');
+            document.getElementById('btn-clear-customer').classList.add('hidden');
+            document.getElementById('points-section').classList.add('hidden');
+            document.getElementById('points-redeem').value = '';
+            updateSummary();
+        }
+
+        async function processCheckout() {
+            if (cart.length === 0) {
+                UI.showAlert('payment-alert', 'Cart is empty.');
+                return;
+            }
+
+            const subtotal = cart.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+            const pointsRedeem = parseInt(document.getElementById('points-redeem')?.value) || 0;
+
+            let tierDiscount = 0;
+            if (currentCustomer) {
+                const tierPercent = currentCustomer.tierDiscountPercent || 0;
+                tierDiscount = subtotal * tierPercent / 100;
+            }
+
+            const pointsDiscount = Math.min(pointsRedeem, subtotal - tierDiscount);
+            const totalDue = Math.max(subtotal - tierDiscount - pointsDiscount, 0);
+            const tendered = parseFloat(document.getElementById('cash-tendered').value) || 0;
+
+            if (tendered < totalDue) {
+                UI.showAlert('payment-alert', `Insufficient cash. Total due: ${UI.currency(totalDue)}, tendered: ${UI.currency(tendered)}`);
+                return;
+            }
+
+            UI.setLoading('btn-checkout', true, 'Processing...', 'Process checkout');
+
+            const payload = {
+                transactionType: 'POS',
+                cashierUsername: staff.username,
+                cashTendered: tendered,
+                loyaltyPointsToRedeem: pointsRedeem,
+                totalDiscount: 0,
+                discountDescription: '',
+                customerId: currentCustomer?.customerId || null,
+                items: cart.map(i => ({
+                    itemCode: i.itemCode,
+                    quantity: i.quantity
+                }))
+            };
+
+            console.log('Checkout payload:', JSON.stringify(payload));
+
+            const data = await API.billing.checkout(payload);
+
+            if (data.serialNumber) {
+                showReceipt(data, tendered);
+            } else {
+                UI.showAlert('payment-alert', data.error || 'Checkout failed.');
+                UI.setLoading('btn-checkout', false, '', 'Process checkout');
+            }
+        }
+
+        function showReceipt(bill, tendered) {
+            document.getElementById('receipt-bill-num').textContent =
+                'Bill #' + bill.serialNumber + ' · ' + new Date().toLocaleTimeString();
+
+            document.getElementById('receipt-body').innerHTML = `
+                <div class="space-y-1.5">
+                    ${bill.items.map(i => `
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">${i.itemName} x${i.quantity}</span>
+                            <span class="font-medium">${UI.currency(i.totalPrice)}</span>
+                        </div>
+                    `).join('')}
+                    <div class="border-t border-gray-100 pt-2 mt-2 space-y-1">
+                        <div class="flex justify-between text-gray-500">
+                            <span>Subtotal</span><span>${UI.currency(bill.totalFullPrice)}</span>
+                        </div>
+                        <div class="flex justify-between text-gray-500">
+                            <span>Discount</span><span>— ${UI.currency(bill.totalDiscount)}</span>
+                        </div>
+                        <div class="flex justify-between font-bold text-black">
+                            <span>Total</span><span>${UI.currency(bill.netTotal)}</span>
+                        </div>
+                        <div class="flex justify-between text-gray-500">
+                            <span>Cash</span><span>${UI.currency(tendered)}</span>
+                        </div>
+                        <div class="flex justify-between font-bold text-green-600">
+                            <span>Change</span><span>${UI.currency(bill.changeAmount)}</span>
+                        </div>
+                        ${bill.loyaltyPointsEarned > 0 ? `
+                        <div class="flex justify-between text-blue-600 text-xs pt-1">
+                            <span>Points earned</span><span>+${bill.loyaltyPointsEarned}</span>
+                        </div>` : ''}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('receipt-modal').classList.remove('hidden');
+        }
+
+        function closeReceipt() {
+            document.getElementById('receipt-modal').classList.add('hidden');
+            clearTransaction();
+        }
+
+        function clearTransaction() {
+            cart = [];
+            currentCustomer = null;
+            document.getElementById('cash-tendered').value = '';
+            document.getElementById('customer-email').value = '';
+            document.getElementById('customer-info').classList.add('hidden');
+            document.getElementById('btn-clear-customer').classList.add('hidden');
+            UI.setLoading('btn-checkout', false, '', 'Process checkout');
+            UI.hideAlert('payment-alert');
+            UI.hideAlert('item-alert');
+            renderCart();
+            updateSummary();
+        }
+
+        renderCart();
+        updateSummary();
+    </script>
+
+</body>
+
+</html>

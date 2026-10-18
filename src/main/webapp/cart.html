@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYOS — Cart</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="border-b border-gray-100 bg-white sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+            <a href="index.html" class="text-lg font-bold tracking-tight">SYOS</a>
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-500" id="nav-name"></span>
+                <a href="index.html" class="text-sm text-gray-500 hover:text-black transition-colors">
+                    ← Continue shopping
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-6 py-10">
+
+        <h2 class="text-xl font-bold text-black mb-8">Your cart</h2>
+
+        <div id="empty-state" class="hidden text-center py-20">
+            <p class="text-gray-300 text-lg mb-4">Your cart is empty</p>
+            <a href="index.html"
+                class="text-sm text-black underline underline-offset-2">
+                Browse items
+            </a>
+        </div>
+
+        <div id="cart-content" class="hidden grid grid-cols-3 gap-8">
+
+            <!-- Cart items -->
+            <div class="col-span-2">
+                <div class="bg-white border border-gray-100 rounded-xl overflow-hidden">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-100">
+                                <th class="text-left text-xs text-gray-400 font-medium p-4">Item</th>
+                                <th class="text-left text-xs text-gray-400 font-medium p-4">Price</th>
+                                <th class="text-left text-xs text-gray-400 font-medium p-4">Qty</th>
+                                <th class="text-left text-xs text-gray-400 font-medium p-4">Total</th>
+                                <th class="p-4"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Order summary -->
+            <div class="space-y-4">
+                <div class="bg-white border border-gray-100 rounded-xl p-5">
+                    <h3 class="text-sm font-semibold text-black mb-4">Order summary</h3>
+
+                    <!-- Loyalty info -->
+                    <div id="loyalty-section" class="hidden mb-4 p-3 bg-gray-50 rounded-lg">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-xs text-gray-500">Your tier</span>
+                            <span class="text-xs font-medium text-black" id="loyalty-tier"></span>
+                        </div>
+                        <div class="flex justify-between mb-3">
+                            <span class="text-xs text-gray-500">Available points</span>
+                            <span class="text-xs font-medium text-black" id="loyalty-points"></span>
+                        </div>
+                        <div id="redeem-section">
+                            <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1.5">
+                                Redeem points
+                            </label>
+                            <input type="number" id="points-redeem"
+                                placeholder="0" min="0"
+                                oninput="updateSummary()"
+                                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors">
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 mb-4">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Subtotal</span>
+                            <span class="font-medium" id="summary-subtotal">LKR 0.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Tier discount</span>
+                        <span class="text-green-600 font-medium" id="summary-discount">— LKR 0.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Points redeemed</span>
+                            <span class="text-green-600 font-medium" id="summary-points-val">— LKR 0.00</span>
+                        </div>
+                        <div class="border-t border-gray-100 pt-2 flex justify-between">
+                            <span class="text-sm font-bold text-black">Total</span>
+                            <span class="text-base font-bold text-black" id="summary-total">LKR 0.00</span>
+                        </div>
+                    </div>
+
+                    <div id="checkout-alert" class="hidden mb-3"></div>
+
+                    <button onclick="checkout()" id="btn-checkout"
+                        class="w-full bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-gray-900 active:scale-95 transition-all">
+                        Place order
+                    </button>
+
+                    <p class="text-xs text-gray-400 text-center mt-3">Online payment processed securely</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Order confirmation modal -->
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-8 w-full max-w-sm mx-4">
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span class="text-green-600 text-xl">✓</span>
+                </div>
+                <h3 class="text-base font-bold text-black">Order placed!</h3>
+                <p class="text-xs text-gray-400 mt-1" id="confirm-bill-num"></p>
+            </div>
+            <div id="confirm-body" class="space-y-2 mb-6 text-sm"></div>
+            <a href="index.html"
+                class="block w-full bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-gray-900 transition-colors text-center">
+                Continue shopping
+            </a>
+        </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/ui.js"></script>
+    <script>
+        let cart = JSON.parse(sessionStorage.getItem('cart') || '[]');
+let inventory = {};
+const customer = Auth.getCustomer();
+
+if (customer) {
+    document.getElementById('nav-name').textContent = 'Hi, ' + customer.fullName;
+    document.getElementById('loyalty-section').classList.remove('hidden');
+    document.getElementById('loyalty-tier').textContent = customer.customerTier;
+    document.getElementById('loyalty-points').textContent = customer.loyaltyPoints + ' pts';
+}
+
+async function loadInventory() {
+    const inv = await API.reports.inventory();
+    inventory = {};
+    inv.forEach(i => inventory[i.itemCode] = i.web);
+    renderCart();
+}
+
+function renderCart() {
+    if (cart.length === 0) {
+        document.getElementById('empty-state').classList.remove('hidden');
+        document.getElementById('cart-content').classList.add('hidden');
+        return;
+    }
+
+    document.getElementById('empty-state').classList.add('hidden');
+    document.getElementById('cart-content').classList.remove('hidden');
+
+    UI.renderTable('cart-body', cart.map((item, i) => {
+        const webStock   = inventory[item.itemCode] ?? 0;
+        const stockIssue = item.quantity > webStock;
+        const remaining  = webStock - item.quantity;
+
+        return `
+        <tr class="border-b border-gray-50 last:border-0 ${stockIssue ? 'bg-red-50' : ''}">
+            <td class="p-4">
+                <p class="text-sm font-medium text-black">${item.name}</p>
+                <p class="text-xs text-gray-400">${item.itemCode}</p>
+                ${stockIssue
+                    ? `<p class="text-xs text-red-500 mt-0.5">
+                        ${webStock === 0
+                            ? 'Out of stock — please remove'
+                            : `Only ${webStock} available — reduce quantity`}
+                       </p>`
+                    : ''}
+            </td>
+            <td class="p-4 text-sm text-gray-600">${UI.currency(item.unitPrice)}</td>
+            <td class="p-4">
+                <div class="flex items-center gap-1">
+                    <button onclick="changeQty(${i}, -1)"
+                        class="w-6 h-6 border border-gray-200 rounded text-xs hover:bg-gray-50 transition-colors">−</button>
+                    <span class="text-sm w-6 text-center ${stockIssue ? 'text-red-500 font-bold' : ''}">${item.quantity}</span>
+                    <button onclick="changeQty(${i}, 1)"
+                        class="w-6 h-6 border border-gray-200 rounded text-xs transition-colors
+                        ${remaining <= 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gray-50'}"
+                        ${remaining <= 0 ? 'disabled' : ''}>+</button>
+                </div>
+            </td>
+            <td class="p-4 text-sm font-medium ${stockIssue ? 'text-red-400' : 'text-black'}">
+                ${UI.currency(item.unitPrice * item.quantity)}
+            </td>
+            <td class="p-4">
+                <button onclick="removeItem(${i})"
+                    class="text-xs text-gray-300 hover:text-red-500 transition-colors">Remove</button>
+            </td>
+        </tr>`;
+    }));
+
+    updateSummary();
+    validateCart();
+}
+
+function validateCart() {
+    // Check if any item has a stock issue
+    const hasIssue = cart.some(item => {
+        const webStock = inventory[item.itemCode] ?? 0;
+        return item.quantity > webStock;
+    });
+
+    const btn = document.getElementById('btn-checkout');
+    if (hasIssue) {
+        btn.disabled = true;
+        btn.className = 'w-full bg-gray-200 text-gray-400 py-2.5 rounded-lg text-sm font-medium cursor-not-allowed';
+        UI.showAlert('checkout-alert', 'Some items in your cart have stock issues. Please update quantities or remove them.', 'error');
+    } else {
+        btn.disabled = false;
+        btn.className = 'w-full bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-gray-900 active:scale-95 transition-all';
+        UI.hideAlert('checkout-alert');
+    }
+}
+
+function changeQty(index, delta) {
+    const webStock = inventory[cart[index].itemCode] ?? 0;
+    const newQty   = cart[index].quantity + delta;
+
+    if (delta > 0 && newQty > webStock) return; // Can't exceed stock
+    cart[index].quantity = newQty;
+    if (cart[index].quantity <= 0) cart.splice(index, 1);
+
+    sessionStorage.setItem('cart', JSON.stringify(cart));
+    renderCart();
+}
+
+function removeItem(index) {
+    cart.splice(index, 1);
+    sessionStorage.setItem('cart', JSON.stringify(cart));
+    renderCart();
+}
+
+function updateSummary() {
+    const subtotal     = cart.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+    const pointsRedeem = parseInt(document.getElementById('points-redeem')?.value) || 0;
+
+    let tierDiscount = 0;
+    if (customer) {
+        const tierPercent = customer.tierDiscountPercent || 0;
+        tierDiscount = subtotal * tierPercent / 100;
+    }
+
+    const pointsDiscount = Math.min(pointsRedeem, subtotal - tierDiscount);
+    const totalDiscount = tierDiscount + pointsDiscount;
+    const total = Math.max(subtotal - totalDiscount, 0);
+
+    document.getElementById('summary-subtotal').textContent = UI.currency(subtotal);
+    document.getElementById('summary-discount').textContent = '— ' + UI.currency(tierDiscount);
+    document.getElementById('summary-points-val').textContent = '— ' + UI.currency(pointsDiscount);
+    document.getElementById('summary-total').textContent = UI.currency(total);
+}
+
+async function checkout() {
+    if (!customer) {
+        sessionStorage.setItem('returnTo', 'cart.html');
+        window.location.href = 'login.html';
+        return;
+    }
+
+    if (cart.length === 0) {
+        UI.showAlert('checkout-alert', 'Your cart is empty.');
+        return;
+    }
+
+    // Final stock validation before submitting
+    const hasIssue = cart.some(item => item.quantity > (inventory[item.itemCode] ?? 0));
+    if (hasIssue) {
+        UI.showAlert('checkout-alert', 'Please resolve stock issues before placing order.');
+        return;
+    }
+
+    const subtotal     = cart.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+    const pointsRedeem = parseInt(document.getElementById('points-redeem')?.value) || 0;
+    const maxRedeem    = Math.min(customer.loyaltyPoints, subtotal);
+    const discount     = Math.min(pointsRedeem, maxRedeem);
+
+    UI.setLoading('btn-checkout', true, 'Placing order...', 'Place order');
+
+    // Change the payload in checkout():
+    const payload = {
+    transactionType: 'WEB',
+    cashierUsername: 'WEB-SYSTEM',
+    cashTendered: subtotal,
+    customerId: customer.customerId,
+    loyaltyPointsToRedeem: pointsRedeem,
+    totalDiscount: 0,
+    discountDescription: '',
+    items: cart.map(i => ({
+        itemCode: i.itemCode,
+        quantity: i.quantity
+    }))
+};
+
+    const data = await API.billing.checkout(payload);
+
+    if (data.serialNumber) {
+        sessionStorage.removeItem('cart');
+
+        document.getElementById('confirm-bill-num').textContent =
+            'Order #' + data.serialNumber;
+
+        document.getElementById('confirm-body').innerHTML = `
+            <div class="space-y-1.5">
+                ${data.items.map(i => `
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">${i.itemName} x${i.quantity}</span>
+                        <span class="font-medium">${UI.currency(i.totalPrice)}</span>
+                    </div>
+                `).join('')}
+                <div class="border-t border-gray-100 pt-2 mt-2 space-y-1">
+                    <div class="flex justify-between text-gray-500 text-sm">fapi
+                        
+                        <span>Discount</span>
+                        <span>— ${UI.currency(data.totalDiscount)}</span>
+                    </div>
+                    <div class="flex justify-between font-bold text-black">
+                        <span>Total paid</span>
+                        <span>${UI.currency(data.netTotal)}</span>
+                    </div>
+                    ${data.loyaltyPointsEarned > 0 ? `
+                    <div class="flex justify-between text-blue-600 text-xs pt-1">
+                        <span>Points earned</span>
+                        <span>+${data.loyaltyPointsEarned}</span>
+                    </div>` : ''}
+                </div>
+            </div>
+        `;
+
+        document.getElementById('confirm-modal').classList.remove('hidden');
+    } else {
+        UI.showAlert('checkout-alert', data.error || 'Order failed. Please try again.');
+        UI.setLoading('btn-checkout', false, '', 'Place order');
+    }
+}
+
+// load inventory first, then render cart
+    loadInventory();
+    setTimeout(() => WS.onUpdate(() => loadInventory()), 500);
+    </script>
+
+</body>
+</html>

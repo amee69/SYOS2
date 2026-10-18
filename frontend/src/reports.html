@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SYOS — Reports</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+
+  <body class="bg-gray-50 min-h-screen">
+    <div id="staff-nav"></div>
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+      <div class="mb-6 flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-black">Reports</h2>
+          <p class="text-sm text-gray-400 mt-0.5">
+            Sales, inventory and stock analysis
+          </p>
+        </div>
+        <button
+          onclick="confirmGenerate()"
+          class="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:border-black hover:text-black transition-all"
+        >
+          Save as .txt
+        </button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex gap-1 border-b border-gray-200 mb-6">
+        <button
+          onclick="switchTab('sales')"
+          id="tab-sales"
+          class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-black text-black transition-all"
+        >
+          Daily sales
+        </button>
+        <button
+          onclick="switchTab('bills')"
+          id="tab-bills"
+          class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-black transition-all"
+        >
+          Bill report
+        </button>
+        <button
+          onclick="switchTab('inventory')"
+          id="tab-inventory"
+          class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-black transition-all"
+        >
+          Inventory
+        </button>
+        <button
+          onclick="switchTab('reorder')"
+          id="tab-reorder"
+          class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-black transition-all"
+        >
+          Reorder alerts
+        </button>
+        <button
+          onclick="switchTab('batches')"
+          id="tab-batches"
+          class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-black transition-all"
+        >
+          Batch stock
+        </button>
+        <button
+          onclick="switchTab('reshelving')"
+          id="tab-reshelving"
+          class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-black transition-all"
+        >
+          Reshelving
+        </button>
+      </div>
+
+      <!-- Filter bar -->
+      <div id="filter-bar" class="flex gap-2 mb-4">
+        <button
+          onclick="setFilter(null)"
+          id="filter-all"
+          class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-black text-white transition-all"
+        >
+          All
+        </button>
+        <button
+          onclick="setFilter('POS')"
+          id="filter-pos"
+          class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-500 hover:border-black hover:text-black transition-all"
+        >
+          POS only
+        </button>
+        <button
+          onclick="setFilter('WEB')"
+          id="filter-web"
+          class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-500 hover:border-black hover:text-black transition-all"
+        >
+          Web only
+        </button>
+      </div>
+
+      <!-- Report panels -->
+
+      <!-- Daily sales -->
+      <div
+        id="panel-sales"
+        class="bg-white border border-gray-100 rounded-xl p-6"
+      >
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h3 class="text-sm font-semibold text-black">Daily sales report</h3>
+            <p class="text-xs text-gray-400 mt-0.5" id="sales-date"></p>
+          </div>
+          <div class="flex gap-4 text-right">
+            <div>
+              <p class="text-xs text-gray-400">Total revenue</p>
+              <p class="text-base font-bold text-black" id="sales-total">—</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-400">Units sold</p>
+              <p class="text-base font-bold text-black" id="sales-qty">—</p>
+            </div>
+          </div>
+        </div>
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-gray-100">
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Code
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Item
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Qty sold
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Revenue
+              </th>
+            </tr>
+          </thead>
+          <tbody id="sales-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Bill report -->
+      <div
+        id="panel-bills"
+        class="hidden bg-white border border-gray-100 rounded-xl p-6"
+      >
+        <h3 class="text-sm font-semibold text-black mb-5">
+          Bill report — all transactions
+        </h3>
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-gray-100">
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Bill #
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Date
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Cashier
+              </th>
+              <!-- <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Items
+              </th> -->
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Total
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">Net</th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Type
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Payment
+              </th>
+            </tr>
+          </thead>
+          <tbody id="bills-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Inventory -->
+      <div
+        id="panel-inventory"
+        class="hidden bg-white border border-gray-100 rounded-xl p-6"
+      >
+        <h3 class="text-sm font-semibold text-black mb-5">
+          Full inventory report
+        </h3>
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-gray-100">
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Code
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Item
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Category
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Price
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Store
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Shelf
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Web
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Total
+              </th>
+            </tr>
+          </thead>
+          <tbody id="inventory-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Reorder alerts -->
+      <div
+        id="panel-reorder"
+        class="hidden bg-white border border-gray-100 rounded-xl p-6"
+      >
+        <div class="flex items-center justify-between mb-5">
+          <h3 class="text-sm font-semibold text-black">Reorder alerts</h3>
+          <span class="text-xs text-gray-400" id="reorder-count"></span>
+        </div>
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-gray-100">
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Code
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Item
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Current stock
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Threshold
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Shortage
+              </th>
+            </tr>
+          </thead>
+          <tbody id="reorder-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Batch stock -->
+      <div
+        id="panel-batches"
+        class="hidden bg-white border border-gray-100 rounded-xl p-6"
+      >
+        <h3 class="text-sm font-semibold text-black mb-5">
+          Batch stock report
+        </h3>
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-gray-100">
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Batch ID
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Item
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Qty
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Purchase date
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Expiry date
+              </th>
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                Status
+              </th>
+            </tr>
+          </thead>
+          <tbody id="batches-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Reshelving -->
+      <div
+        id="panel-reshelving"
+        class="hidden bg-white border border-gray-100 rounded-xl p-6"
+      >
+        <h3 class="text-sm font-semibold text-black mb-5">End of Day Reshelving report</h3>
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-gray-100">
+              <th class="text-left text-xs text-gray-400 font-medium pb-2">Code</th>
+<th class="text-left text-xs text-gray-400 font-medium pb-2">Item</th>
+<th class="text-left text-xs text-gray-400 font-medium pb-2">Shelf stock</th>
+<th class="text-left text-xs text-gray-400 font-medium pb-2">Store stock</th>
+<th class="text-left text-xs text-gray-400 font-medium pb-2">Suggested move</th>
+            </tr>
+          </thead>
+          <tbody id="reshelving-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Generate confirmation dialog -->
+    <div
+      id="generate-modal"
+      class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-white rounded-2xl p-6 w-full max-w-sm mx-4">
+        <h3 class="text-base font-bold text-black mb-2">
+          Save report to file?
+        </h3>
+        <p class="text-sm text-gray-500 mb-1" id="generate-report-name"></p>
+        <p class="text-xs text-gray-400 mb-6">
+          This will save a .txt file to the reports/ folder.
+        </p>
+        <div id="generate-alert" class="hidden mb-4"></div>
+        <div class="flex gap-3">
+          <button
+            onclick="closeGenerateModal()"
+            class="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onclick="generateReport()"
+            id="btn-generate"
+            class="flex-1 py-2.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-900 transition-colors"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/ui.js"></script>
+    <script src="/js/navbar.js"></script>
+    <script>
+      const staff = Auth.requireStaff("MANAGER");
+      renderStaffNav("reports.html");
+
+      let currentTab = "sales";
+      let currentFilter = null;
+
+      document.getElementById("sales-date").textContent =
+        new Date().toLocaleDateString("en-GB", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+
+      function switchTab(tab) {
+        const tabs = [
+          "sales",
+          "bills",
+          "inventory",
+          "reorder",
+          "batches",
+          "reshelving",
+        ];
+        tabs.forEach((t) => {
+          document
+            .getElementById("panel-" + t)
+            .classList.toggle("hidden", t !== tab);
+          const btn = document.getElementById("tab-" + t);
+          btn.className = `tab-btn px-4 py-2.5 text-sm font-medium border-b-2 transition-all ${
+            t === tab
+              ? "border-black text-black"
+              : "border-transparent text-gray-400 hover:text-black"
+          }`;
+        });
+
+        // Show filter bar only for reports that support filtering
+        const filterable = ["sales", "bills"];
+        document
+          .getElementById("filter-bar")
+          .classList.toggle("hidden", !filterable.includes(tab));
+
+        currentTab = tab;
+        loadCurrentTab();
+      }
+
+      function setFilter(type) {
+        currentFilter = type;
+
+        document.querySelectorAll(".filter-btn").forEach((btn) => {
+          btn.className =
+            "filter-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-500 hover:border-black hover:text-black transition-all";
+        });
+
+        const activeId =
+          type === null
+            ? "filter-all"
+            : type === "POS"
+              ? "filter-pos"
+              : "filter-web";
+        document.getElementById(activeId).className =
+          "filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-black text-white transition-all";
+
+        loadCurrentTab();
+      }
+
+      async function loadCurrentTab() {
+        switch (currentTab) {
+          case "sales":
+            await loadSales();
+            break;
+          case "bills":
+            await loadBills();
+            break;
+          case "inventory":
+            await loadInventory();
+            break;
+          case "reorder":
+            await loadReorder();
+            break;
+          case "batches":
+            await loadBatches();
+            break;
+          case "reshelving":
+            await loadReshelving();
+            break;
+        }
+      }
+
+      async function loadSales() {
+        const data = await API.reports.sales(currentFilter);
+        document.getElementById("sales-total").textContent = UI.currency(
+          data.grandTotal,
+        );
+        document.getElementById("sales-qty").textContent =
+          data.totalQuantity + " units";
+        UI.renderTable(
+          "sales-body",
+          data.items.map(
+            (item) => `
+                <tr class="border-b border-gray-50 last:border-0">
+                    <td class="py-2.5 text-xs text-gray-400">${item.itemCode}</td>
+                    <td class="py-2.5 text-sm text-black">${item.itemName}</td>
+                    <td class="py-2.5 text-sm text-gray-600">${item.totalQuantity}</td>
+                    <td class="py-2.5 text-sm font-medium text-black">${UI.currency(item.totalRevenue)}</td>
+                </tr>
+            `,
+          ),
+        );
+      }
+
+      async function loadBills() {
+        const data = await API.reports.bills(currentFilter);
+        UI.renderTable(
+          "bills-body",
+          data.map(
+            (bill) => `
+                <tr class="border-b border-gray-50 last:border-0">
+                    <td class="py-2.5 text-sm text-black">#${bill.serialNumber}</td>
+                    <td class="py-2.5 text-xs text-gray-400">${UI.date(bill.billDate)}</td>
+                    <td class="py-2.5 text-sm text-gray-600">${bill.cashierUsername}</td>
+                    <td class="py-2 text-sm text-gray-500">${UI.currency(bill.totalFullPrice)}</td>
+                    <td class="py-2.5 text-sm font-medium text-black">${UI.currency(bill.netTotal)}</td>
+                    <td class="py-2.5">${UI.badge(bill.transactionType, bill.transactionType === "WEB" ? "blue" : "gray")}</td>
+                    <td class="py-2.5">${UI.badge(bill.paymentType, "gray")}</td>
+                </tr>
+            `,
+          ),
+        );
+      }
+
+      async function loadInventory() {
+        const data = await API.reports.inventory();
+        UI.renderTable(
+          "inventory-body",
+          data.map(
+            (item) => `
+                <tr class="border-b border-gray-50 last:border-0">
+                    <td class="py-2.5 text-xs text-gray-400">${item.itemCode}</td>
+                    <td class="py-2.5 text-sm text-black">${item.itemName}</td>
+                    <td class="py-2.5 text-xs text-gray-400">${item.category}</td>
+                    <td class="py-2.5 text-sm text-gray-600">${UI.currency(item.unitPrice)}</td>
+                    <td class="py-2.5 text-sm text-gray-600">${item.store}</td>
+                    <td class="py-2.5 text-sm text-gray-600">${item.shelf}</td>
+                    <td class="py-2.5 text-sm text-gray-600">${item.web}</td>
+                    <td class="py-2.5 text-sm font-medium text-black">${item.total}</td>
+                </tr>
+            `,
+          ),
+        );
+      }
+
+      async function loadReorder() {
+        const data = await API.reports.reorder();
+        document.getElementById("reorder-count").textContent =
+          data.count + " items need reordering";
+        UI.renderTable(
+          "reorder-body",
+          data.items.map(
+            (item) => `
+                <tr class="border-b border-gray-50 last:border-0">
+                    <td class="py-2.5 text-xs text-gray-400">${item.itemCode}</td>
+                    <td class="py-2.5 text-sm text-black">${item.itemName}</td>
+                    <td class="py-2.5">${UI.badge(item.currentStock, "red")}</td>
+                    <td class="py-2.5 text-sm text-gray-500">${item.reorderLevel}</td>
+                    <td class="py-2.5">${UI.badge(item.shortage + " short", "amber")}</td>
+                </tr>
+            `,
+          ),
+        );
+      }
+
+      async function loadBatches() {
+        const data = await API.reports.batches();
+        UI.renderTable(
+          "batches-body",
+          data.map(
+            (batch) => `
+                <tr class="border-b border-gray-50 last:border-0">
+                    <td class="py-2.5 text-xs text-gray-400">#${batch.batchId}</td>
+                    <td class="py-2.5 text-sm text-black">${batch.itemName}</td>
+                    <td class="py-2.5 text-sm text-gray-600">${batch.quantity}</td>
+                    <td class="py-2.5 text-xs text-gray-400">${UI.date(batch.purchaseDate)}</td>
+                    <td class="py-2.5 text-xs text-gray-400">${UI.date(batch.expiryDate)}</td>
+                    <td class="py-2.5">${UI.badge(
+                      batch.status === "EXPIRED"
+                        ? "Expired"
+                        : batch.status === "EXPIRING_SOON"
+                          ? "Expiring soon"
+                          : "Good",
+                      batch.status === "EXPIRED"
+                        ? "red"
+                        : batch.status === "EXPIRING_SOON"
+                          ? "amber"
+                          : "green",
+                    )}</td>
+                </tr>
+            `,
+          ),
+        );
+      }
+
+      // async function loadReshelving() {
+      //   const data = await API.reports.reshelving();
+      //   UI.renderTable(
+      //     "reshelving-body",
+      //     data.map(
+      //       (item) => `
+      //           <tr class="border-b border-gray-50 last:border-0">
+      //               <td class="py-2.5 text-xs text-gray-400">${item.itemCode}</td>
+      //               <td class="py-2.5 text-sm text-black">${item.itemName}</td>
+      //               <td class="py-2.5">${UI.badge(item.shelfStock, item.shelfStock < 10 ? "red" : "amber")}</td>
+      //               <td class="py-2.5 text-sm text-gray-500">${item.storeStock}</td>
+      //               <td class="py-2.5 text-sm font-medium text-black">${item.suggestedMove} units</td>
+      //           </tr>
+      //       `,
+      //     ),
+      //   );
+      // }
+      async function loadReshelving() {
+    const data = await API.reports.reshelving();
+    const shelfOnly = data.filter(item => item.targetLocation === 'SHELF');
+    UI.renderTable('reshelving-body', shelfOnly.map(item => `
+        <tr class="border-b border-gray-50 last:border-0">
+            <td class="py-2 text-xs text-gray-400">${item.itemCode}</td>
+            <td class="py-2 text-sm text-black">${item.itemName}</td>
+            <td class="py-2">${UI.badge(item.currentStock, item.currentStock < 10 ? 'red' : 'amber')}</td>
+            <td class="py-2 text-sm text-gray-500">${item.storeStock}</td>
+            <td class="py-2 text-sm font-medium text-black">${item.suggestedMove} units</td>
+        </tr>
+    `));
+}
+
+      function confirmGenerate() {
+        const names = {
+          sales: "Daily Sales Report",
+          bills: "Bill Report",
+          inventory: "Inventory Report",
+          reorder: "Reorder Alert Report",
+          batches: "Batch Stock Report",
+          reshelving: "Reshelving Report",
+        };
+        document.getElementById("generate-report-name").textContent =
+          names[currentTab] +
+          (currentFilter ? " (" + currentFilter + ")" : " (All)");
+        UI.hideAlert("generate-alert");
+        document.getElementById("generate-modal").classList.remove("hidden");
+      }
+
+      function closeGenerateModal() {
+        document.getElementById("generate-modal").classList.add("hidden");
+      }
+
+      async function generateReport() {
+        UI.setLoading("btn-generate", true, "Saving...", "Save");
+
+        const data = await API.reports.generate(currentTab, currentFilter);
+
+        if (data.success) {
+          UI.showAlert(
+            "generate-alert",
+            "Report saved successfully.",
+            "success",
+          );
+          setTimeout(() => closeGenerateModal(), 1500);
+        } else {
+          UI.showAlert(
+            "generate-alert",
+            data.error || "Failed to save report.",
+          );
+        }
+
+        UI.setLoading("btn-generate", false, "", "Save");
+      }
+
+      // Load initial tab
+      //loadSales();
+      // Load initial tab — check URL for tab parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      const requestedTab = urlParams.get("tab");
+      if (
+        requestedTab &&
+        [
+          "sales",
+          "bills",
+          "inventory",
+          "reorder",
+          "batches",
+          "reshelving",
+        ].includes(requestedTab)
+      ) {
+        switchTab(requestedTab);
+      } else {
+        loadSales();
+      }
+
+      setTimeout(() => WS.onUpdate(() => loadCurrentTab()), 500);
+    </script>
+  </body>
+</html>

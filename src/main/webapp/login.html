@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYOS — Sign in</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+
+    <div class="w-full max-w-sm">
+
+        <!-- Brand -->
+        <div class="text-center mb-8">
+            <a href="index.html" class="text-2xl font-bold text-black tracking-tight">SYOS</a>
+            <p class="text-xs text-gray-400 mt-1">Synex Outlet Store</p>
+        </div>
+
+        <!-- Card -->
+        <div class="bg-white border border-gray-200 rounded-2xl p-8">
+
+            <h2 class="text-base font-semibold text-black mb-6">Sign in to your account</h2>
+
+            <div id="alert" class="hidden mb-4"></div>
+
+            <div class="mb-4">
+                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
+                    Email address
+                </label>
+                <input type="email" id="email"
+                    placeholder="you@example.com"
+                    onkeydown="if(event.key==='Enter') login()"
+                    class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors">
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
+                    Password
+                </label>
+                <input type="password" id="password"
+                    placeholder="Enter password"
+                    onkeydown="if(event.key==='Enter') login()"
+                    class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors">
+            </div>
+
+            <button onclick="login()" id="btn-login"
+                class="w-full bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-gray-900 active:scale-95 transition-all">
+                Sign in
+            </button>
+
+            <p class="text-center text-xs text-gray-400 mt-5">
+                No account?
+                <a href="register.html" class="text-black underline underline-offset-2">Register here</a>
+            </p>
+
+        </div>
+
+        <p class="text-center mt-6">
+            <a href="index.html" class="text-xs text-gray-400 hover:text-black transition-colors">
+                ← Back to store
+            </a>
+        </p>
+
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/ui.js"></script>
+    <script>
+        // already logged in
+        if (Auth.getCustomer()) window.location.href = 'index.html';
+
+        async function login() {
+            const email    = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!email || !password) {
+                UI.showAlert('alert', 'Please enter your email and password.');
+                return;
+            }
+
+            UI.setLoading('btn-login', true, 'Signing in...', 'Sign in');
+
+            const data = await API.auth.loginCustomer(email, password);
+
+            if (data.success) {
+                sessionStorage.setItem('customer', JSON.stringify(data));
+                // go back to where they came from or store
+                const returnTo = sessionStorage.getItem('returnTo') || 'index.html';
+                sessionStorage.removeItem('returnTo');
+                window.location.href = returnTo;
+            } else {
+                UI.showAlert('alert', 'Invalid email or password.');
+                UI.setLoading('btn-login', false, '', 'Sign in');
+            }
+        }
+    </script>
+
+</body>
+</html>

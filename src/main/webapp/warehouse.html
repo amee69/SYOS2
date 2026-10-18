@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SYOS — Warehouse</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+
+  <body class="bg-gray-50 min-h-screen">
+    <div id="staff-nav"></div>
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+      <div class="mb-6">
+        <h2 class="text-xl font-bold text-black">Warehouse</h2>
+        <p class="text-sm text-gray-400 mt-0.5">
+          Manage stock, batches and items
+        </p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex gap-1 border-b border-gray-200 mb-6">
+        <button
+          onclick="switchTab('receive')"
+          id="tab-receive"
+          class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-black text-black transition-all"
+        >
+          Receive stock
+        </button>
+        <button
+          onclick="switchTab('move')"
+          id="tab-move"
+          class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-black transition-all"
+        >
+          Move stock
+        </button>
+        <button
+          onclick="switchTab('items')"
+          id="tab-items"
+          class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-black transition-all"
+        >
+          Manage items
+        </button>
+      </div>
+
+      <!-- Tab: Receive stock -->
+      <div id="panel-receive">
+        <div class="grid grid-cols-2 gap-6">
+          <div class="bg-white border border-gray-100 rounded-xl p-6">
+            <h3 class="text-sm font-semibold text-black mb-5">
+              Receive new batch
+            </h3>
+            <div id="receive-alert" class="hidden mb-4"></div>
+
+            <div class="mb-4">
+              <label
+                class="block text-xs text-gray-400 uppercase tracking-wider mb-1.5"
+                >Item code</label
+              >
+              <input
+                type="text"
+                id="receive-code"
+                placeholder="e.g. DRY-001-2026"
+                oninput="lookupReceiveItem()"
+                class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors uppercase"
+              />
+            </div>
+
+            <div
+              id="receive-item-info"
+              class="hidden mb-4 p-3 bg-gray-50 rounded-lg"
+            >
+              <p
+                class="text-sm font-medium text-black"
+                id="receive-item-name"
+              ></p>
+              <p
+                class="text-xs text-gray-400 mt-0.5"
+                id="receive-item-stock"
+              ></p>
+            </div>
+
+            <div class="mb-4">
+              <label
+                class="block text-xs text-gray-400 uppercase tracking-wider mb-1.5"
+                >Quantity</label
+              >
+              <input
+                type="number"
+                id="receive-qty"
+                placeholder="0"
+                min="1"
+                class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors"
+              />
+            </div>
+
+            <div class="mb-5">
+              <label
+                class="block text-xs text-gray-400 uppercase tracking-wider mb-1.5"
+                >Expiry date</label
+              >
+              <input
+                type="date"
+                id="receive-expiry"
+                class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors"
+              />
+            </div>
+
+            <button
+              onclick="receiveBatch()"
+              id="btn-receive"
+              class="w-full bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-gray-900 active:scale-95 transition-all"
+            >
+              Receive batch
+            </button>
+          </div>
+
+          <!-- Inventory quick view -->
+          <div class="bg-white border border-gray-100 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-semibold text-black">
+                Current inventory
+              </h3>
+              <button
+                onclick="loadInventory()"
+                class="text-xs text-gray-400 hover:text-black transition-colors"
+              >
+                Refresh
+              </button>
+            </div>
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-gray-100">
+                  <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                    Code
+                  </th>
+                  <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                    Item
+                  </th>
+                  <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                    Store
+                  </th>
+                  <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                    Shelf
+                  </th>
+                  <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                    Web
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="inventory-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Tab: Move stock -->
+      <div id="panel-move" class="hidden">
+        <div class="grid grid-cols-2 gap-6">
+          <div class="bg-white border border-gray-100 rounded-xl p-6">
+            <h3 class="text-sm font-semibold text-black mb-5">
+              Move stock to location
+            </h3>
+            <div id="move-alert" class="hidden mb-4"></div>
+
+            <div class="mb-4">
+              <label
+                class="block text-xs text-gray-400 uppercase tracking-wider mb-1.5"
+                >Item code</label
+              >
+              <input
+                type="text"
+                id="move-code"
+                placeholder="e.g. DRY-001-2026"
+                oninput="lookupMoveItem()"
+                class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors uppercase"
+              />
+            </div>
+
+            <div
+              id="move-item-info"
+              class="hidden mb-4 p-3 bg-gray-50 rounded-lg"
+            >
+              <p class="text-sm font-medium text-black" id="move-item-name"></p>
+              <p class="text-xs text-gray-400 mt-0.5" id="move-item-store"></p>
+            </div>
+
+            <div class="mb-4">
+              <label
+                class="block text-xs text-gray-400 uppercase tracking-wider mb-1.5"
+                >Quantity to move</label
+              >
+              <input
+                type="number"
+                id="move-qty"
+                placeholder="0"
+                min="1"
+                class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors"
+              />
+            </div>
+
+            <div class="mb-5">
+              <label
+                class="block text-xs text-gray-400 uppercase tracking-wider mb-1.5"
+                >Target location</label
+              >
+              <select
+                id="move-target"
+                class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors bg-white"
+              >
+                <option value="SHELF">Shelf (in-store)</option>
+                <option value="WEB">Web inventory (online)</option>
+              </select>
+            </div>
+
+            <button
+              onclick="moveStock()"
+              id="btn-move"
+              class="w-full bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-gray-900 active:scale-95 transition-all"
+            >
+              Move stock
+            </button>
+          </div>
+
+          <div class="bg-white border border-gray-100 rounded-xl p-6">
+            <h3 class="text-sm font-semibold text-black mb-4">
+              Reshelving suggestions
+            </h3>
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-gray-100">
+                  <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                    Code
+                  </th>
+                  <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                    Item
+                  </th>
+                  <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                    Target
+                  </th>
+                  <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                    Current
+                  </th>
+                  <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                    Suggested move
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="reshelving-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Manage items -->
+      <div id="panel-items" class="hidden">
+        <div class="grid grid-cols-2 gap-6">
+          <!-- Add item form -->
+          <div class="bg-white border border-gray-100 rounded-xl p-6">
+            <h3 class="text-sm font-semibold text-black mb-5">Add new item</h3>
+            <div id="items-alert" class="hidden mb-4"></div>
+
+            <div class="mb-4">
+              <label
+                class="block text-xs text-gray-400 uppercase tracking-wider mb-1.5"
+                >Item name</label
+              >
+              <input
+                type="text"
+                id="new-item-name"
+                placeholder="e.g. Jasmine Rice 1kg"
+                class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors"
+              />
+            </div>
+
+            <div class="mb-4">
+              <label
+                class="block text-xs text-gray-400 uppercase tracking-wider mb-1.5"
+                >Unit price (LKR)</label
+              >
+              <input
+                type="number"
+                id="new-item-price"
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors"
+              />
+            </div>
+
+            <div class="mb-4">
+              <label
+                class="block text-xs text-gray-400 uppercase tracking-wider mb-1.5"
+                >Category</label
+              >
+              <select
+                id="new-item-category"
+                class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors bg-white"
+              ></select>
+            </div>
+
+            <div class="mb-5">
+              <label
+                class="block text-xs text-gray-400 uppercase tracking-wider mb-1.5"
+                >Reorder threshold</label
+              >
+              <input
+                type="number"
+                id="new-item-threshold"
+                placeholder="50"
+                min="0"
+                value="50"
+                class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black transition-colors"
+              />
+            </div>
+
+            <button
+              onclick="addItem()"
+              id="btn-add-item"
+              class="w-full bg-black text-white py-2.5 rounded-lg text-sm font-medium hover:bg-gray-900 active:scale-95 transition-all"
+            >
+              Add item
+            </button>
+          </div>
+
+          <!-- Items list -->
+          <div class="bg-white border border-gray-100 rounded-xl p-6">
+            <h3 class="text-sm font-semibold text-black mb-4">All items</h3>
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-gray-100">
+                  <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                    Code
+                  </th>
+                  <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                    Name
+                  </th>
+                  <th class="text-left text-xs text-gray-400 font-medium pb-2">
+                    Price
+                  </th>
+                  <th class="pb-2"></th>
+                </tr>
+              </thead>
+              <tbody id="items-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/ui.js"></script>
+    <script src="/js/navbar.js"></script>
+    <script>
+      const staff = Auth.requireStaff("MANAGER");
+      renderStaffNav("warehouse.html");
+
+      // Tab switching
+      function switchTab(tab) {
+        ["receive", "move", "items"].forEach((t) => {
+          document
+            .getElementById("panel-" + t)
+            .classList.toggle("hidden", t !== tab);
+          const btn = document.getElementById("tab-" + t);
+          btn.className = `tab-btn px-4 py-2.5 text-sm font-medium border-b-2 transition-all ${
+            t === tab
+              ? "border-black text-black"
+              : "border-transparent text-gray-400 hover:text-black"
+          }`;
+        });
+
+        if (tab === "receive") loadInventory();
+        if (tab === "move") loadReshelving();
+        if (tab === "items") {
+          loadAllItems();
+          loadCategories();
+        }
+      }
+
+      // ── Receive stock ──────────────────────────────
+      async function lookupReceiveItem() {
+        const code = document
+          .getElementById("receive-code")
+          .value.trim()
+          .toUpperCase();
+        if (code.length < 3) return;
+        try {
+          const item = await API.items.getByCode(code);
+          const levels = await API.stock.getLevels(code);
+          document.getElementById("receive-item-name").textContent = item.name;
+          document.getElementById("receive-item-stock").textContent =
+            `Store: ${levels.store} · Shelf: ${levels.shelf} · Web: ${levels.web}`;
+          document
+            .getElementById("receive-item-info")
+            .classList.remove("hidden");
+        } catch (e) {
+          document.getElementById("receive-item-info").classList.add("hidden");
+        }
+      }
+
+      async function receiveBatch() {
+        const code = document
+          .getElementById("receive-code")
+          .value.trim()
+          .toUpperCase();
+        const qty = parseInt(document.getElementById("receive-qty").value);
+        const expiry = document.getElementById("receive-expiry").value;
+
+        if (!code || !qty || !expiry) {
+          UI.showAlert("receive-alert", "Please fill in all fields.");
+          return;
+        }
+
+        UI.setLoading("btn-receive", true, "Receiving...", "Receive batch");
+        const data = await API.stock.receiveBatch({
+          itemCode: code,
+          quantity: qty,
+          expiryDate: expiry,
+        });
+
+        if (data.success) {
+          UI.showAlert(
+            "receive-alert",
+            `Batch received: ${qty} units of ${code}`,
+            "success",
+          );
+          document.getElementById("receive-code").value = "";
+          document.getElementById("receive-qty").value = "";
+          document.getElementById("receive-expiry").value = "";
+          document.getElementById("receive-item-info").classList.add("hidden");
+          loadInventory();
+        } else {
+          UI.showAlert(
+            "receive-alert",
+            data.error || "Failed to receive batch.",
+          );
+        }
+        UI.setLoading("btn-receive", false, "", "Receive batch");
+      }
+
+      async function loadInventory() {
+        const data = await API.reports.inventory();
+        UI.renderTable(
+          "inventory-body",
+          data.map(
+            (item) => `
+                <tr class="border-b border-gray-50 last:border-0">
+                    <td class="py-2 text-xs text-gray-400">${item.itemCode}</td>
+                    <td class="py-2 text-sm text-black">${item.itemName}</td>
+                    <td class="py-2 text-sm text-gray-500">${item.store}</td>
+                    <td class="py-2 text-sm text-gray-500">${item.shelf}</td>
+                    <td class="py-2 text-sm text-gray-500">${item.web}</td>
+                </tr>
+            `,
+          ),
+        );
+      }
+
+      // ── Move stock ─────────────────────────────────
+      async function lookupMoveItem() {
+        const code = document
+          .getElementById("move-code")
+          .value.trim()
+          .toUpperCase();
+        if (code.length < 3) return;
+        try {
+          const item = await API.items.getByCode(code);
+          const levels = await API.stock.getLevels(code);
+          document.getElementById("move-item-name").textContent = item.name;
+          document.getElementById("move-item-store").textContent =
+            `Available in store: ${levels.store} units`;
+          document.getElementById("move-item-info").classList.remove("hidden");
+        } catch (e) {
+          document.getElementById("move-item-info").classList.add("hidden");
+        }
+      }
+
+      async function moveStock() {
+        const code = document
+          .getElementById("move-code")
+          .value.trim()
+          .toUpperCase();
+        const qty = parseInt(document.getElementById("move-qty").value);
+        const target = document.getElementById("move-target").value;
+
+        if (!code || !qty) {
+          UI.showAlert("move-alert", "Please fill in all fields.");
+          return;
+        }
+
+        UI.setLoading("btn-move", true, "Moving...", "Move stock");
+        const data = await API.stock.moveStock({
+          itemCode: code,
+          quantity: qty,
+          targetLocation: target,
+        });
+
+        if (data.success) {
+          if (data.warning) {
+            UI.showAlert("move-alert", data.warning, "info");
+          } else {
+            UI.showAlert(
+              "move-alert",
+              `Moved ${data.quantityMoved} units to ${target}. New level: ${data.newStockLevel}`,
+              "success",
+            );
+          }
+          loadReshelving();
+            document.getElementById("move-code").value = '';
+            document.getElementById("move-qty").value = '';
+            document.getElementById("move-target").value = 'SHELF';
+        } else {
+          UI.showAlert("move-alert", data.error || "Failed to move stock.");
+        }
+        UI.setLoading("btn-move", false, "", "Move stock");
+      }
+
+      // async function loadReshelving() {
+      //     const data = await API.reports.reshelving();
+      //     UI.renderTable('reshelving-body', data.map(item => `
+      //         <tr class="border-b border-gray-50 last:border-0">
+      //             <td class="py-2 text-xs text-gray-400">${item.itemCode}</td>
+      //             <td class="py-2 text-sm text-black">${item.itemName}</td>
+      //             <td class="py-2">${UI.badge(item.shelfStock, item.shelfStock < 10 ? 'red' : 'amber')}</td>
+      //             <td class="py-2 text-sm text-gray-500">${item.suggestedMove} units</td>
+      //         </tr>
+      //         `));
+      // }
+      async function loadReshelving() {
+        const data = await API.reports.reshelving();
+        UI.renderTable(
+          "reshelving-body",
+          data.map(
+            (item) => `
+        <tr class="border-b border-gray-50 last:border-0">
+            <td class="py-2 text-xs text-gray-400">${item.itemCode}</td>
+            <td class="py-2 text-sm text-black">${item.itemName}</td>
+            <td class="py-2">${UI.badge(item.targetLocation, item.targetLocation === "WEB" ? "blue" : "gray")}</td>
+            <td class="py-2">${UI.badge(item.currentStock, item.currentStock < 10 ? "red" : "amber")}</td>
+            <td class="py-2 text-sm text-gray-500">${item.suggestedMove} units</td>
+        </tr>
+    `,
+          ),
+        );
+      }
+
+      // ── Manage items ───────────────────────────────
+      async function loadCategories() {
+        const cats = await API.stock.getCategories();
+        const sel = document.getElementById("new-item-category");
+        sel.innerHTML = cats
+          .map((c) => `<option value="${c.code}">${c.name}</option>`)
+          .join("");
+      }
+
+      async function addItem() {
+        const name = document.getElementById("new-item-name").value.trim();
+        const price = parseFloat(
+          document.getElementById("new-item-price").value,
+        );
+        const category = document.getElementById("new-item-category").value;
+        const threshold =
+          parseInt(document.getElementById("new-item-threshold").value) || 50;
+
+        if (!name || !price || !category) {
+          UI.showAlert("items-alert", "Please fill in all fields.");
+          return;
+        }
+
+        UI.setLoading("btn-add-item", true, "Adding...", "Add item");
+        const data = await API.stock.addItem({
+          name,
+          unitPrice: price,
+          categoryCode: category,
+          reorderThreshold: threshold,
+        });
+
+        if (data.success) {
+          UI.showAlert(
+            "items-alert",
+            `Item created: ${data.itemCode}`,
+            "success",
+          );
+          document.getElementById("new-item-name").value = "";
+          document.getElementById("new-item-price").value = "";
+          loadAllItems();
+        } else {
+          UI.showAlert("items-alert", data.error || "Failed to create item.");
+        }
+        UI.setLoading("btn-add-item", false, "", "Add item");
+      }
+
+      async function deleteItem(code) {
+        if (!confirm(`Delete item ${code}? This cannot be undone.`)) return;
+        const data = await API.stock.deleteItem(code);
+        if (data.success) {
+          loadAllItems();
+        } else {
+          alert(
+            data.error ||
+              "Cannot delete item — it may have stock or sales history.",
+          );
+        }
+      }
+
+      async function loadAllItems() {
+        const items = await API.items.getAll();
+        UI.renderTable(
+          "items-body",
+          items.map(
+            (item) => `
+                <tr class="border-b border-gray-50 last:border-0">
+                    <td class="py-2 text-xs text-gray-400">${item.itemCode}</td>
+                    <td class="py-2 text-sm text-black">${item.name}</td>
+                    <td class="py-2 text-sm text-gray-500">${UI.currency(item.unitPrice)}</td>
+                    <td class="py-2 text-right">
+                        <button onclick="deleteItem('${item.itemCode}')"
+                            class="text-xs text-gray-300 hover:text-red-500 transition-colors">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            `,
+          ),
+        );
+      }
+
+      // Initial load
+      loadInventory();
+
+      setTimeout(
+        () =>
+          WS.onUpdate(() => {
+            if (
+              !document
+                .getElementById("panel-receive")
+                .classList.contains("hidden")
+            )
+              loadInventory();
+            if (
+              !document
+                .getElementById("panel-move")
+                .classList.contains("hidden")
+            )
+              loadReshelving();
+          }),
+        500,
+      );
+    </script>
+  </body>
+</html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYOS — Synex Outlet Store</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body class="bg-white min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="border-b border-gray-100 bg-white sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+            <h1 class="text-lg font-bold tracking-tight">SYOS</h1>
+            <div class="flex items-center gap-3">
+                <span id="nav-customer-name" class="text-sm text-gray-500 hidden"></span>
+                <a href="login.html" id="nav-login-btn"
+                    class="text-sm text-gray-600 hover:text-black transition-colors">
+                    Sign in
+                </a>
+                <a href="register.html" id="nav-register-btn"
+                    class="text-sm bg-black text-white px-4 py-1.5 rounded-lg hover:bg-gray-900 transition-colors">
+                    Register
+                </a>
+                <button onclick="logoutCustomer()" id="nav-logout-btn"
+                    class="hidden text-sm text-gray-500 hover:text-black transition-colors">
+                    Sign out
+                </button>
+                <a href="cart.html" id="nav-cart-btn"
+                    class="hidden text-sm bg-black text-white px-4 py-1.5 rounded-lg hover:bg-gray-900 transition-colors">
+                    Cart <span id="cart-count" class="ml-1 bg-white text-black text-xs px-1.5 rounded-full">0</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <div class="border-b border-gray-100 bg-gray-50">
+        <div class="max-w-6xl mx-auto px-6 py-16 text-center">
+            <h2 class="text-4xl font-bold text-black mb-3">Fresh groceries,<br>delivered to your door.</h2>
+            <p class="text-gray-500 text-base mb-8">Shop from Colombo's favourite outlet store.</p>
+            <input type="text" id="search-input" placeholder="Search for items..." oninput="filterItems()"
+                class="w-full max-w-md px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black transition-colors">
+        </div>
+    </div>
+
+    <!-- Category Filter -->
+    <div class="border-b border-gray-100">
+        <div class="max-w-6xl mx-auto px-6 py-3 flex gap-2 overflow-x-auto">
+            <button onclick="filterCategory('ALL')" id="cat-ALL"
+                class="cat-btn flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-medium bg-black text-white transition-all">
+                All
+            </button>
+            <button onclick="filterCategory('DRY')" id="cat-DRY"
+                class="cat-btn flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600 hover:border-black hover:text-black transition-all">
+                Dry Goods
+            </button>
+            <button onclick="filterCategory('DAI')" id="cat-DAI"
+                class="cat-btn flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600 hover:border-black hover:text-black transition-all">
+                Dairy
+            </button>
+            <button onclick="filterCategory('BEV')" id="cat-BEV"
+                class="cat-btn flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600 hover:border-black hover:text-black transition-all">
+                Beverages
+            </button>
+            <button onclick="filterCategory('SNK')" id="cat-SNK"
+                class="cat-btn flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600 hover:border-black hover:text-black transition-all">
+                Snacks
+            </button>
+            <button onclick="filterCategory('PER')" id="cat-PER"
+                class="cat-btn flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600 hover:border-black hover:text-black transition-all">
+                Personal Care
+            </button>
+        </div>
+    </div>
+
+    <!-- Items Grid -->
+    <div class="max-w-6xl mx-auto px-6 py-10">
+        <div id="loading" class="text-center py-20 text-gray-400 text-sm">Loading items...</div>
+        <div id="items-grid" class="hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+        <div id="no-results" class="hidden text-center py-20 text-gray-400 text-sm">No items found.</div>
+    </div>
+
+    <!-- Footer -->
+    <div class="border-t border-gray-100 mt-10">
+        <div class="max-w-6xl mx-auto px-6 py-6 flex justify-between items-center">
+            <span class="text-sm font-bold">SYOS</span>
+            <span class="text-xs text-gray-400">Synex Outlet Store, Colombo</span>
+            <a href="staff.html" class="text-xs text-gray-300 hover:text-gray-400 transition-colors">Staff access</a>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        let allItems = [];
+        let inventory = {};
+        let cart = JSON.parse(sessionStorage.getItem('cart') || '[]');
+        let activeCategory = 'ALL';
+
+        const customer = JSON.parse(sessionStorage.getItem('customer') || 'null');
+        if (customer) {
+            document.getElementById('nav-customer-name').textContent = 'Hi, ' + customer.fullName;
+            document.getElementById('nav-customer-name').classList.remove('hidden');
+            document.getElementById('nav-login-btn').classList.add('hidden');
+            document.getElementById('nav-register-btn').classList.add('hidden');
+            document.getElementById('nav-logout-btn').classList.remove('hidden');
+            document.getElementById('nav-cart-btn').classList.remove('hidden');
+        }
+
+        updateCartCount();
+
+        async function loadItems() {
+            try {
+                // Load items and inventory in parallel
+                const [itemsRes, inventoryRes] = await Promise.all([
+                    fetch('/api/items'),
+                    fetch('/api/reports/inventory')
+                ]);
+
+                allItems = await itemsRes.json();
+                const inv = await inventoryRes.json();
+
+                // Build a lookup map: itemCode -> web stock
+                inventory = {};
+                inv.forEach(i => inventory[i.itemCode] = i.web);
+
+                renderItems(allItems);
+            } catch (e) {
+                document.getElementById('loading').textContent = 'Failed to load items.';
+            }
+        }
+
+        function renderItems(items) {
+            const grid = document.getElementById('items-grid');
+            const loading = document.getElementById('loading');
+            const noResults = document.getElementById('no-results');
+
+            if (items.length === 0) {
+                loading.classList.add('hidden');
+                grid.classList.add('hidden');
+                noResults.classList.remove('hidden');
+                return;
+            }
+
+            grid.innerHTML = items.map(item => {
+                const webStock = inventory[item.itemCode] ?? 0;
+                const inCart = cart.find(c => c.itemCode === item.itemCode);
+                const qty = inCart ? inCart.quantity : 0;
+                const outOfStock = webStock <= 0;
+
+                // how many can still be added (web stock minus what's already in cart)
+                const remaining = webStock - qty;
+
+                return `
+        <div class="border border-gray-100 rounded-xl p-4 ${outOfStock ? 'opacity-50' : 'hover:border-gray-300'} transition-all"
+             data-code="${item.itemCode}"
+             data-name="${item.name.toLowerCase()}"
+             data-category="${item.category}">
+
+            <div class="flex items-start justify-between mb-1">
+                <span class="text-xs text-gray-400 font-medium">${getCategoryName(item.category)}</span>
+                ${outOfStock
+                        ? `<span class="text-xs bg-red-50 text-red-400 px-2 py-0.5 rounded-full">Out of stock</span>`
+                        : `<span class="text-xs bg-gray-50 text-gray-400 px-2 py-0.5 rounded-full">${webStock} left</span>`
+                    }
+            </div>
+
+            <h3 class="text-sm font-semibold text-black mt-1 mb-3 leading-snug">${item.name}</h3>
+            <p class="text-base font-bold text-black mb-4">LKR ${parseFloat(item.unitPrice).toFixed(2)}</p>
+
+            ${outOfStock ? `
+                <button disabled
+                    class="w-full py-2 border border-gray-100 rounded-lg text-xs font-medium text-gray-300 cursor-not-allowed bg-gray-50">
+                    Out of stock
+                </button>
+            ` : qty === 0 ? `
+                <button onclick="addToCart('${item.itemCode}', '${item.name}', ${item.unitPrice})"
+                    class="w-full py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-black hover:text-white hover:border-black transition-all">
+                    Add to cart
+                </button>
+            ` : `
+                <div class="flex items-center justify-between border border-gray-200 rounded-lg overflow-hidden">
+                    <button onclick="decreaseQty('${item.itemCode}')"
+                        class="px-3 py-2 text-gray-600 hover:bg-gray-50 transition-colors text-sm">−</button>
+                    <span class="text-xs font-semibold">${qty}</span>
+                    <button onclick="increaseQty('${item.itemCode}', '${item.name}', ${item.unitPrice}, ${webStock})"
+                        class="${remaining <= 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gray-50'} px-3 py-2 text-gray-600 transition-colors text-sm"
+                        ${remaining <= 0 ? 'disabled' : ''}>+</button>
+                </div>
+                ${remaining <= 0 ? `<p class="text-xs text-red-400 mt-1 text-center">Max stock reached</p>` : ''}
+            `}
+        </div>`;
+            }).join('');
+
+            loading.classList.add('hidden');
+            noResults.classList.add('hidden');
+            grid.classList.remove('hidden');
+        }
+
+        function filterCategory(cat) {
+            activeCategory = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                btn.className = 'cat-btn flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600 hover:border-black hover:text-black transition-all';
+            });
+            document.getElementById('cat-' + cat).className =
+                'cat-btn flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-medium bg-black text-white transition-all';
+            applyFilters();
+        }
+
+        function filterItems() { applyFilters(); }
+
+        function applyFilters() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const filtered = allItems.filter(item => {
+                const matchesCategory = activeCategory === 'ALL' || item.category === activeCategory;
+                const matchesSearch = item.name.toLowerCase().includes(search) ||
+                    item.itemCode.toLowerCase().includes(search);
+                return matchesCategory && matchesSearch;
+            });
+            renderItems(filtered);
+        }
+
+        function addToCart(itemCode, name, unitPrice) {
+            const webStock = inventory[itemCode] ?? 0;
+            const inCart = cart.find(c => c.itemCode === itemCode);
+            const current = inCart ? inCart.quantity : 0;
+
+            if (current >= webStock) return; // Can't exceed web stock
+
+            if (inCart) {
+                inCart.quantity++;
+            } else {
+                cart.push({ itemCode, name, unitPrice: parseFloat(unitPrice), quantity: 1 });
+            }
+            saveCart();
+            applyFilters();
+        }
+
+        function increaseQty(itemCode, name, unitPrice, webStock) {
+            const inCart = cart.find(c => c.itemCode === itemCode);
+            if (inCart && inCart.quantity >= webStock) return;
+            addToCart(itemCode, name, unitPrice);
+        }
+
+        function decreaseQty(itemCode) {
+            const idx = cart.findIndex(c => c.itemCode === itemCode);
+            if (idx !== -1) {
+                cart[idx].quantity--;
+                if (cart[idx].quantity <= 0) cart.splice(idx, 1);
+            }
+            saveCart();
+            applyFilters();
+        }
+
+        function saveCart() {
+            sessionStorage.setItem('cart', JSON.stringify(cart));
+            updateCartCount();
+        }
+
+        function updateCartCount() {
+            const total = cart.reduce((sum, item) => sum + item.quantity, 0);
+            document.getElementById('cart-count').textContent = total;
+            if (total > 0) {
+                document.getElementById('nav-cart-btn').classList.remove('hidden');
+            }
+        }
+
+        function logoutCustomer() {
+            sessionStorage.removeItem('customer');
+            sessionStorage.removeItem('cart');
+            window.location.reload();
+        }
+
+        function getCategoryName(code) {
+            const map = { DRY: 'Dry Goods', DAI: 'Dairy', BEV: 'Beverages', SNK: 'Snacks', PER: 'Personal Care' };
+            return map[code] || code;
+        }
+
+        loadItems();
+
+        setTimeout(() => WS.onUpdate(() => loadItems()), 500);
+    </script>
+
+</body>
+
+</html>
